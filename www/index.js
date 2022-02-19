@@ -1,3 +1,5 @@
-import * as wasm from "hello-wasm-pack";
+import { GameBoard } from 'wasm-2048';
 
-wasm.greet();
+const gameBoard = GameBoard.new(4);
+
+console.log(gameBoard.get_cells());
