@@ -1,7 +1,6 @@
 mod utils;
 
 use wasm_bindgen::prelude::*;
-use js_sys;
 use rand::Rng;
 use web_sys::console;
 
@@ -31,6 +30,7 @@ pub struct GameBoard {
 
 #[wasm_bindgen]
 impl GameBoard {
+    #[wasm_bindgen(constructor)]
     pub fn new(s: usize) -> GameBoard {
         let side = s;
 
@@ -48,7 +48,8 @@ impl GameBoard {
         }
     }
 
-    pub fn get_cells(self) -> Vec<u32> {
-        self.cells
+    #[wasm_bindgen(method, getter)]
+    pub fn cells(&self) -> *const u32 {
+        self.cells.as_ptr()
     }
 }
