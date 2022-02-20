@@ -6,6 +6,7 @@ const gameBoard = new GameBoard(boardSize);
 const pre = document.querySelector('#canvas');
 
 const init = () => {
+    gameBoard.generate();
     let cells = new Uint32Array(memory.buffer, gameBoard.cells, boardSize * boardSize);
     render(cells);
     console.log(cells);
