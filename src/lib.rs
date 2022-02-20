@@ -48,8 +48,8 @@ impl GameBoard {
     #[wasm_bindgen(constructor)]
     pub fn new(s: usize) -> GameBoard {
         let size: usize = s;
-        let mut cells: Vec<u32> = vec![0; size * size];
-        let mut rng: rngs::ThreadRng = thread_rng();
+        let cells: Vec<u32> = vec![0; size * size];
+        let rng: rngs::ThreadRng = thread_rng();
 
         GameBoard {
             size,
@@ -77,28 +77,29 @@ impl GameBoard {
 
     pub fn move_cells(&mut self, dir: Direction) {
         let mut next: Vec<u32> = vec![0; self.size * self.size];
+        let axis = match dir {
+            Direction::Up   | Direction::Down   => Axis::Vertical,
+            Direction::Left | Direction::Right  => Axis::Horizontal,
+        };
         
-        let lines: Vec<Vec<u32>> = self.lines(
-            match dir {
-                Direction::Up | Direction::Down => Axis::Vertical,
-                _                               => Axis::Horizontal,
-            }
-        );
+        let lines: Vec<Vec<u32>> = self.merge(self.lines(axis));
 
         lines.into_iter()
             .enumerate()
-            .for_each(|(i, line)| line
-                .iter()
-                .enumerate()
-                .for_each(|(j, cell)|
-                    next[self.move_index(i, j, dir)] = *cell
-                )
+            .for_each(|(i, line)| {
+                match dir {
+                    Direction::Up | Direction::Left => line.iter().collect::<Vec<&u32>>(),
+                    Direction::Down | Direction::Right => line.iter().rev().collect::<Vec<&u32>>(),
+                }.iter().enumerate().for_each(|(j, cell)|
+                        next[self.move_index(i, j, dir)] = **cell
+                    );
+                }
             );
 
-            if self.cells != next {
-                self.cells = next;
-                self.generate();
-            }
+        if self.cells != next {
+            self.cells = next;
+            self.generate();
+        }
     }
 
     pub fn generate(&mut self) {
@@ -106,7 +107,7 @@ impl GameBoard {
         let empty_vec: Vec<usize> = self.empty_cells().into_iter().collect();
         let idx = empty_vec[empty_idx];
         self.cells[idx] = if self.rng.gen_range(0..64) == 0 { 4 } else { 2 };
-
+        
         if self.empty_cells().len() + 1 == self.cells.len() {
             self.generate();
         }
@@ -114,15 +115,37 @@ impl GameBoard {
     
     fn move_index(&self, i: usize, j: usize, dir: Direction) -> usize {
         match dir {
-            Direction::Up       => { self.index(i,                  j                   ) }
-            Direction::Down     => { self.index(i,                  self.size - j - 1   ) }
-            Direction::Left     => { self.index(j,                  i                   ) }
-            Direction::Right    => { self.index(self.size - j - 1,  i                   ) }
+            Direction::Up       => self.index(i,                    j),
+            Direction::Down     => self.index(i,                    self.size - j - 1),
+            Direction::Left     => self.index(j,                    i),
+            Direction::Right    => self.index(self.size - j - 1,    i),
         }
     }
-
+    
     fn index(&self, row: usize, col: usize) -> usize {
         row + col * self.size
+    }
+
+    fn merge(&self, lines: Vec<Vec<u32>>) -> Vec<Vec<u32>>{
+        let mut merge: Vec<Vec<u32>> = vec![vec![]; self.size];
+
+        lines.into_iter()
+            .enumerate()
+            .for_each(|(i, l)| {
+                let mut line = l.into_iter().peekable();
+
+                while let Some(cell) = line.next() {
+                    if Some(&cell) == line.peek() {
+                        merge[i].push(cell * 2);
+                        line.next();
+                    } else {
+                        merge[i].push(cell);
+                    }
+                }
+            }
+        );
+
+        merge
     }
 
     fn lines(&self, axis: Axis) -> Vec<Vec<u32>> {
