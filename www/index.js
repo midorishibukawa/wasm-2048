@@ -1,5 +1,5 @@
 import { GameBoard, Direction } from './node_modules/wasm-2048';
-import { memory } from './node_modules/wasm-2048/wasm_2048_bg';
+import { memory } from './node_modules/wasm-2048/wasm_2048_bg.wasm';
 
 const boardSize = 4;
 const gameBoard = new GameBoard(boardSize);
