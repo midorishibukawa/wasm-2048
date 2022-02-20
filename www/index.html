@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html style="height: 100%; width: 100%; overflow: hidden;">
   <head>
     <meta charset="utf-8">
     <title>Hello wasm-pack!</title>
   </head>
-  <body>
-    <pre id="canvas"></pre>
+  <body style="display: grid; place-items: center; height: 100%; width: 100%;">
+    <canvas id="c2048"
+            style="border-radius: 8px; background-color: #bbb;"></canvas>
     <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
     <script src="./bootstrap.js"></script>
   </body>
