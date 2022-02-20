@@ -64,34 +64,41 @@ impl GameBoard {
     }
 
     fn empty_cells(&self) -> BTreeSet<usize> {
-        let mut empty: BTreeSet<usize> = BTreeSet::new();
-
-        for i in 0..self.cells.len() {
-            if self.cells[i] == 0 { empty.insert(i); }
-        }
-
-        return empty;
+        self.cells
+            .clone()
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, cell)| match cell {
+                0 => Some(i),
+                _ => None,
+            })
+            .collect::<BTreeSet<usize>>()
     }
 
     pub fn move_cells(&mut self, dir: Direction) {
         let mut next: Vec<u32> = vec![0; self.size * self.size];
-
-        let lines: Vec<Vec<u32>> = self.lines(
-                if dir == Direction::Up || dir == Direction::Down {
-                    Axis::Vertical
-                } else {
-                    Axis::Horizontal
-                });
         
-        for i in 0..lines.len() {
-            for j in 0..lines[i].len() {
-                next[self.move_index(i, j, dir)] = lines[i][j];
+        let lines: Vec<Vec<u32>> = self.lines(
+            match dir {
+                Direction::Up | Direction::Down => Axis::Vertical,
+                _                               => Axis::Horizontal,
             }
-        }
-        if self.cells != next {
-            self.cells = next;
-            self.generate();
-        }
+        );
+
+        lines.into_iter()
+            .enumerate()
+            .for_each(|(i, line)| line
+                .iter()
+                .enumerate()
+                .for_each(|(j, cell)|
+                    next[self.move_index(i, j, dir)] = *cell
+                )
+            );
+
+            if self.cells != next {
+                self.cells = next;
+                self.generate();
+            }
     }
 
     pub fn generate(&mut self) {
@@ -99,7 +106,6 @@ impl GameBoard {
         let empty_vec: Vec<usize> = self.empty_cells().into_iter().collect();
         let idx = empty_vec[empty_idx];
         self.cells[idx] = if self.rng.gen_range(0..64) == 0 { 4 } else { 2 };
-        self.empty_cells().remove(&idx);
 
         if self.empty_cells().len() + 1 == self.cells.len() {
             self.generate();
@@ -116,22 +122,24 @@ impl GameBoard {
     }
 
     fn index(&self, row: usize, col: usize) -> usize {
-        return row + col * self.size;
+        row + col * self.size
     }
 
     fn lines(&self, axis: Axis) -> Vec<Vec<u32>> {
         let mut lines: Vec<Vec<u32>> = vec![vec![]; self.size];
 
-        for i in 0..self.cells.len() {
-            if self.cells[i] > 0 {
-                lines[if axis == Axis::Vertical {
-                    i % self.size
-                } else {
-                    i / self.size
-                }].push(self.cells[i]);
-            }
-        }
+        self.cells
+            .clone()
+            .into_iter()
+            .enumerate()
+            .for_each(|(i, cell)|
+                if cell > 0 {
+                    lines[ match axis {
+                        Axis::Vertical      => i % self.size,
+                        Axis::Horizontal    => i / self.size,
+                    }].push(cell)}
+            );
         
-        return lines;
+        lines
     }
 }
