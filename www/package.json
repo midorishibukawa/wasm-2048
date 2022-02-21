@@ -33,6 +33,6 @@
     "webpack-dev-server": "^3.1.5"
   },
   "dependencies": {
-    "wasm-2048": "^0.1.0"
+    "wasm-2048": "0.1.1"
   }
 }
