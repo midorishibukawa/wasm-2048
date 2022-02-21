@@ -1,9 +1,21 @@
 import { GameBoard, Direction } from './node_modules/wasm-2048';
 import { memory } from './node_modules/wasm-2048/wasm_2048_bg.wasm';
 
-const boardSize = 4;
-const gameBoard = new GameBoard(boardSize);
-const canvas = document.querySelector('#c2048');
+const movementKeys = [
+    {
+        keys: ['ArrowUp',     'KeyW', 'KeyK'],
+        dir: Direction.Up,
+    }, {
+        keys: ['ArrowDown',   'KeyS', 'KeyJ'],
+        dir: Direction.Down,
+    }, {
+        keys: ['ArrowLeft',   'KeyA', 'KeyH'],
+        dir : Direction.Left,
+    }, {
+        keys:  ['ArrowRight',  'KeyD', 'KeyL'],
+        dir: Direction.Right
+    }
+];
 const margin = 128;
 const fontName = 'Open Sans';
 const canvas = document.querySelector('#c2048');
@@ -31,15 +43,8 @@ const init = (size) => {
 }
 
 const move = (key) => {
-    if (key.code == 'ArrowUp') {
-        gameBoard.move_cells(Direction.Up);
-    } else if (key.code == 'ArrowDown') {
-        gameBoard.move_cells(Direction.Down);
-    } else if (key.code == 'ArrowLeft') {
-        gameBoard.move_cells(Direction.Left);
-    } else if (key.code == 'ArrowRight') {
-        gameBoard.move_cells(Direction.Right);
-    }
+    let dir = movementKeys.filter(e => e.keys.includes(key.code)).map(e => e.dir)[0];
+    gameBoard.move_cells(dir);
     render();
 }
 
@@ -119,6 +124,41 @@ const roundRect = (ctx, x, y, size, radius) => {
     ctx.stroke();
 }
 
-init();
+const swipe = {
+    x: null,
+    y: null,
+};
+
+const handleTouchStart = (e) => {
+    const firstTouch = e.touches[0];                                      
+    [swipe.x, swipe.y] = [firstTouch.clientX, firstTouch.clientY];
+};                                                
+                                                                         
+const handleTouchMove = (e) => {
+    if (!swipe.x || !swipe.y) return;
+    
+    const delta = {
+        x: swipe.x - e.touches[0].clientX,
+        y: swipe.y - e.touches[0].clientY,
+    };
+    
+    gameBoard.move_cells(getDir(delta));
+    
+    render();
+    
+    [swipe.x, swipe.y] = [null, null];
+};
+
+const getDir = (delta) => {
+    if (Math.abs(delta.x) > Math.abs(delta.y)) {
+        return delta.x > 0 ? Direction.Left : Direction.Right;
+    } else {
+        return delta.y > 0 ? Direction.Up : Direction.Down;
+    }
+}
 
 window.addEventListener('keydown', move);
+document.addEventListener('touchstart', handleTouchStart, false);        
+document.addEventListener('touchmove', handleTouchMove, false);
+
+init(4);
