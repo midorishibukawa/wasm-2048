@@ -77,12 +77,8 @@ impl GameBoard {
 
     pub fn move_cells(&mut self, dir: Direction) {
         let mut next: Vec<u32> = vec![0; self.size * self.size];
-        let axis = match dir {
-            Direction::Up   | Direction::Down   => Axis::Vertical,
-            Direction::Left | Direction::Right  => Axis::Horizontal,
-        };
         
-        let lines: Vec<Vec<u32>> = self.merge(self.lines(axis));
+        let lines: Vec<Vec<u32>> = self.merge(self.lines(GameBoard::dir_to_axis(dir)), dir);
 
         lines.into_iter()
             .enumerate()
@@ -91,17 +87,17 @@ impl GameBoard {
                     Direction::Up | Direction::Left => line.iter().collect::<Vec<&u32>>(),
                     Direction::Down | Direction::Right => line.iter().rev().collect::<Vec<&u32>>(),
                 }.iter().enumerate().for_each(|(j, cell)|
-                        next[self.move_index(i, j, dir)] = **cell
-                    );
+                next[self.move_index(i, j, dir)] = **cell
+            );
                 }
             );
-
+            
         if self.cells != next {
             self.cells = next;
             self.generate();
         }
     }
-
+    
     pub fn generate(&mut self) {
         let empty_idx: usize = self.rng.gen_range(0..self.empty_cells().len());
         let empty_vec: Vec<usize> = self.empty_cells().into_iter().collect();
@@ -125,32 +121,57 @@ impl GameBoard {
     fn index(&self, row: usize, col: usize) -> usize {
         row + col * self.size
     }
-
-    fn merge(&self, lines: Vec<Vec<u32>>) -> Vec<Vec<u32>>{
+    
+    fn merge(&self, lines: Vec<Vec<u32>>, dir: Direction) -> Vec<Vec<u32>>{
         let mut merge: Vec<Vec<u32>> = vec![vec![]; self.size];
+        
+        let is_dir_rev: bool = GameBoard::is_dir_rev(dir);
 
         lines.into_iter()
             .enumerate()
             .for_each(|(i, l)| {
-                let mut line = l.into_iter().peekable();
+                let line_vec = match is_dir_rev {
+                    true    => l.iter().rev().collect::<Vec<&u32>>(),
+                    false   => l.iter().collect::<Vec<&u32>>(),
+                };
+                let mut line = line_vec.into_iter().peekable();
+                let mut line_merge = Vec::new();
 
                 while let Some(cell) = line.next() {
                     if Some(&cell) == line.peek() {
-                        merge[i].push(cell * 2);
+                        line_merge.push(*cell * 2);
                         line.next();
                     } else {
-                        merge[i].push(cell);
+                        line_merge.push(*cell);
                     }
+                }
+
+                merge[i] = match is_dir_rev {
+                    true    => line_merge.into_iter().rev().collect(),
+                    false   => line_merge,
                 }
             }
         );
-
         merge
+    }
+
+    fn dir_to_axis(dir: Direction) -> Axis {
+        match dir {
+            Direction::Up   | Direction::Down   => Axis::Vertical,
+            Direction::Left | Direction::Right  => Axis::Horizontal,
+        }
+    }
+
+    fn is_dir_rev(dir: Direction) -> bool {
+        match dir {
+            Direction::Up   | Direction::Left    => false,
+            Direction::Down | Direction::Right   => true,
+        }
     }
 
     fn lines(&self, axis: Axis) -> Vec<Vec<u32>> {
         let mut lines: Vec<Vec<u32>> = vec![vec![]; self.size];
-
+        
         self.cells
             .clone()
             .into_iter()
