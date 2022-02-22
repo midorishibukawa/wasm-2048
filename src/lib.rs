@@ -63,6 +63,10 @@ impl GameBoard {
         self.cells.as_ptr()
     }
 
+    pub fn is_game_win(&self) -> bool {
+        self.cells.contains(&11)
+    }
+
     fn empty_cells(&self) -> BTreeSet<usize> {
         self.cells
             .clone()
