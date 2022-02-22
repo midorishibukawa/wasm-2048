@@ -45,7 +45,6 @@ const init = (size) => {
     gameBoard = new GameBoard(boardSize);
     setVariables();
     gameBoard.generate();
-    window.requestAnimationFrame(render);
 }
 
 const move = (key) => {
@@ -176,5 +175,8 @@ window.addEventListener('resize', setVariables);
 
 document.addEventListener('touchstart', handleTouchStart, false);        
 document.addEventListener('touchmove', handleTouchMove, false);
+
+document.querySelectorAll('.size-btn')
+    .forEach((btn, i) => btn.addEventListener('click', () => init(i + 3)));
 
 init(4);

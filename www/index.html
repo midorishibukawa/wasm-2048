@@ -3,30 +3,24 @@
   <head>
     <meta charset="utf-8">
     <title>2048</title>
-    <style>
-      @font-face {
-        font-family: "Open Sans";
-        src: url("assets/fonts/OpenSans-VariableFont_wdth\,wght.ttf");
-      }
-      html {
-        height: 100%;
-        width: 100%;
-        overflow: hidden;
-      }
-      body {
-        display: grid;
-        place-items: center;
-        height: 100%;
-        width: 100%;
-      }
-      canvas {
-        border-radius: 8px;
-        background-color:  #bbada0;
-      }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@700&display=swap" rel="stylesheet"> 
+    <link rel="stylesheet" type="text/css" href="./css/styles.css">
   </head>
   <body>
     <canvas id="c2048"></canvas>
+    <ul>
+      <li><button class="size-btn 3">3x3</button></li>
+      <li><button class="size-btn 4">4x4</button></li>
+      <li><button class="size-btn 5">5x5</button></li>
+      <li><button class="size-btn 6">6x6</button></li>
+      <li><button class="size-btn 7">7x7</button></li>
+      <li><button class="size-btn 8">8x8</button></li>
+      <li><button class="size-btn 9">9x9</button></li>
+      <li><button class="size-btn 10">10x10</button></li>
+      <li><button class="size-btn 11">11x11</button></li>
+    </ul>
     <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
     <script src="./bootstrap.js"></script>
   </body>
