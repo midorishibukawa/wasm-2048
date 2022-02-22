@@ -19,33 +19,55 @@ const movementKeys = [
 const margin = 128;
 const fontName = 'Open Sans';
 const canvas = document.querySelector('#c2048');
+let isGameWin = false;
+let gameWinAnimationStart;
+let prevTimestamp;
 
 let boardSize, gameBoard, canvasSize, ctx, gap, fontSize, squareSize, borderRadius;
 
-const init = (size) => {
-    boardSize = 4;
-    gameBoard = new GameBoard(boardSize);
+const setVariables = () => {
     canvasSize = Math.min(window.innerHeight, window.innerWidth) - margin;
     ctx = canvas.getContext('2d');
     gap = canvasSize / 64;
     fontSize = (canvasSize / boardSize - gap) / 2.5;
     squareSize = (canvasSize - gap * (boardSize + 1)) / boardSize;
     borderRadius = canvasSize / 200;
-
-    console.log(`boardSize = ${boardSize}\ncanvasSize = ${canvasSize}\ngap = ${gap}\nfontSize = ${fontSize}\nsquareSize = ${squareSize}\nborderRadius = ${borderRadius}`);
     
     canvas.height = canvasSize;
     canvas.width = canvasSize;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'center';
+    window.requestAnimationFrame(render);
+}
+
+const init = (size) => {
+    boardSize = size;
+    gameBoard = new GameBoard(boardSize);
+    setVariables();
     gameBoard.generate();
-    render();
+    window.requestAnimationFrame(render);
 }
 
 const move = (key) => {
     let dir = movementKeys.filter(e => e.keys.includes(key.code)).map(e => e.dir)[0];
     gameBoard.move_cells(dir);
-    render();
+    window.requestAnimationFrame(render);
+    if (!isGameWin && gameBoard.is_game_win()) window.requestAnimationFrame(gameWin);
+}
+
+const gameWin = (timestamp) => {
+    if (!gameWinAnimationStart) gameWinAnimationStart = timestamp;
+    console.log(timestamp);
+    const elapsed = timestamp - gameWinAnimationStart;
+
+    isGameWin = true;
+    ctx.fillStyle = '#ddc01103';
+    ctx.fillRect(0, 0, canvasSize, canvasSize);
+    
+    ctx.fillStyle = '#fff';
+    ctx.fillText('YOU WIN!', canvasSize / 2, canvasSize / 2);
+    
+    if (elapsed < 1000) window.requestAnimationFrame(gameWin);
 }
 
 const render = () => {
@@ -150,6 +172,8 @@ const getDir = (delta) => {
 }
 
 window.addEventListener('keydown', move);
+window.addEventListener('resize', setVariables);
+
 document.addEventListener('touchstart', handleTouchStart, false);        
 document.addEventListener('touchmove', handleTouchMove, false);
 
