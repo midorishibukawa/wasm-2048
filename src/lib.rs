@@ -86,11 +86,12 @@ impl GameBoard {
                 match dir {
                     Direction::Up | Direction::Left => line.iter().collect::<Vec<&u32>>(),
                     Direction::Down | Direction::Right => line.iter().rev().collect::<Vec<&u32>>(),
-                }.iter().enumerate().for_each(|(j, cell)|
-                next[self.move_index(i, j, dir)] = **cell
-            );
-                }
-            );
+                }.iter()
+                .enumerate()
+                .for_each(|(j, cell)|
+                    next[self.move_index(i, j, dir)] = **cell
+                );
+            });
             
         if self.cells != next {
             self.cells = next;
@@ -102,9 +103,9 @@ impl GameBoard {
         let empty_idx: usize = self.rng.gen_range(0..self.empty_cells().len());
         let empty_vec: Vec<usize> = self.empty_cells().into_iter().collect();
         let idx = empty_vec[empty_idx];
-        self.cells[idx] = if self.rng.gen_range(0..64) == 0 { 4 } else { 2 };
+        self.cells[idx] = if self.rng.gen_range(0..64) == 0 { 2 } else { 1 };
         
-        if self.empty_cells().len() + 1 == self.cells.len() {
+        if self.empty_cells().len() == self.cells.len() - 1 {
             self.generate();
         }
     }
@@ -139,7 +140,7 @@ impl GameBoard {
 
                 while let Some(cell) = line.next() {
                     if Some(&cell) == line.peek() {
-                        line_merge.push(*cell * 2);
+                        line_merge.push(*cell + 1);
                         line.next();
                     } else {
                         line_merge.push(*cell);
