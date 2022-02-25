@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" name="viewport" content="width=device-width,initial-scale=1.0">
     <title>2048</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@700&display=swap" rel="stylesheet"> 
-    <link rel="stylesheet" type="text/css" href="./public/styles.css">
     <style>
       * {
         margin: 0;
@@ -14,11 +13,14 @@
       html {
         height: 100%;
         width: 100%;
-        overflow: hidden;
+        font-family: 'Open Sans', sans-serif;
       }
       body {
-        display: grid;
-        place-items: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
         height: 100%;
         width: 100%;
       }
@@ -29,8 +31,9 @@
       ul {
         display: grid;
         gap: 1rem;
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: repeat(4, 1fr);
         place-items: center;
+        padding: 0;
       }
       li {
         height: 100%;
@@ -41,16 +44,22 @@
         border: none;
         border-radius: 4px;
         padding: .5rem;
-        font-family: 'Open Sans', sans-serif;
         font-weight: bold;
         color: #776e65;
         background-color: #eee4da;
         height: 100%;
         width: 100%;
       }
+      h1,
+      h2,
+      strong {
+        color: #776e65;
+      }
     </style>
   </head>
   <body>
+    <h1>wasm-2048</h1>
+    <h2>SCORE: <strong></strong></h2>
     <canvas id="c2048"></canvas>
     <ul>
       <li><button class="size-btn 3">3x3</button></li>
@@ -61,7 +70,6 @@
       <li><button class="size-btn 8">8x8</button></li>
       <li><button class="size-btn 9">9x9</button></li>
       <li><button class="size-btn 10">10x10</button></li>
-      <li><button class="size-btn 11">11x11</button></li>
     </ul>
     <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
     <script src="./bootstrap.js"></script>
