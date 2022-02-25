@@ -1,5 +1,5 @@
 import { GameBoard, Direction } from './node_modules/wasm-2048';
-import { memory } from './node_modules/wasm-2048/wasm_2048_bg';
+import { memory } from './node_modules/wasm-2048/wasm_2048_bg.wasm';
 
 const movementKeys = [
     {
@@ -22,7 +22,6 @@ const canvas = document.querySelector('#c2048');
 let isGameWin = false;
 let gameWinAnimationStart;
 let gameOverAnimationStart;
-let prevTimestamp;
 
 let boardSize, gameBoard, canvasSize, ctx, gap, fontSize, squareSize, borderRadius;
 
