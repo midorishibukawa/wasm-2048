@@ -1,5 +1,5 @@
-import { GameBoard, Direction } from './node_modules/wasm-2048';
-import { memory } from './node_modules/wasm-2048/wasm_2048_bg.wasm';
+import { GameBoard, Direction } from 'wasm-2048';
+import { memory } from 'wasm-2048/wasm_2048_bg.wasm';
 
 const movementKeys = [
     {
