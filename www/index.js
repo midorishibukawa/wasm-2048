@@ -21,7 +21,7 @@ const fontName = 'Open Sans';
 const canvas = document.querySelector('#c2048');
 let isGameWin = false;
 let gameWinAnimationStart;
-let prevTimestamp;
+let gameOverAnimationStart;
 
 let boardSize, gameBoard, canvasSize, ctx, gap, fontSize, squareSize, borderRadius;
 
@@ -48,31 +48,59 @@ const init = (size) => {
 }
 
 const move = (key) => {
+    if (key.code.startsWith('Arrow')) key.preventDefault();
     let dir = movementKeys.filter(e => e.keys.includes(key.code)).map(e => e.dir)[0];
     gameBoard.move_cells(dir);
     window.requestAnimationFrame(render);
-    if (!isGameWin && gameBoard.is_game_win()) window.requestAnimationFrame(gameWin);
+    if (!isGameWin && gameBoard.is_game_win) window.requestAnimationFrame(gameWin);
+    if (gameBoard.is_game_over) window.requestAnimationFrame(gameOver);
+}
+
+const gameOver = (timestamp) => {
+    if (!gameOverAnimationStart) gameOverAnimationStart = timestamp;
+
+    window.removeEventListener('keydown', move);
+    const elapsed = timestamp - gameOverAnimationStart;
+
+    isGameWin = true;
+    ctx.fillStyle = '#00000008';
+    ctx.fillRect(0, 0, canvasSize, canvasSize);
+    
+    ctx.fillStyle = '#ffffff80';
+    ctx.fillText('GAME OVER!', canvasSize / 2, canvasSize / 2);
+    
+    if (elapsed < 1000) window.requestAnimationFrame(gameOver);
 }
 
 const gameWin = (timestamp) => {
     if (!gameWinAnimationStart) gameWinAnimationStart = timestamp;
-    console.log(timestamp);
+    
+    window.removeEventListener('keydown', move);
     const elapsed = timestamp - gameWinAnimationStart;
 
     isGameWin = true;
-    ctx.fillStyle = '#ddc01103';
+    ctx.fillStyle = '#ffffff08';
     ctx.fillRect(0, 0, canvasSize, canvasSize);
     
-    ctx.fillStyle = '#fff';
+    ctx.fillStyle = '#00000010';
     ctx.fillText('YOU WIN!', canvasSize / 2, canvasSize / 2);
+    ctx.fillStyle = '#00000010';
     
     if (elapsed < 1000) window.requestAnimationFrame(gameWin);
+    else {
+        window.addEventListener('keydown', move);
+        ctx.fillStyle = '#00000080';
+        ctx.font = `bold ${fontSize / 2}px ${fontName}`;
+        ctx.fillText('press any key', canvasSize / 2, canvasSize / 2 + fontSize);
+        ctx.fillText('to continue', canvasSize / 2, canvasSize / 2 + 1.5 * fontSize + gap / 4);
+    }
 }
 
 const render = () => {
     ctx.clearRect(0, 0, canvasSize, canvasSize);
     ctx.restore();
-    const cells = new Uint32Array(memory.buffer, gameBoard.cells, boardSize * boardSize);
+    const cells = Array.from(new Uint8Array(memory.buffer, gameBoard.cells, boardSize * boardSize));
+    document.querySelector('strong').innerText = cells.filter(cell => cell > 0).map(cell => Math.pow(2, cell)).reduce((cur, acc) => acc + cur);
     renderCells(cells);
     ctx.save();
 }
