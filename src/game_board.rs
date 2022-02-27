@@ -1,8 +1,12 @@
 use wasm_bindgen::prelude::*;
-use web_sys::console;
 use rand::*;
 use std::collections::{BTreeSet, HashMap};
 
+macro_rules! log {
+    ( $( $t:tt)* ) => {
+        web_sys::console::log_1(&format!( $( $t )* ).into());
+    }
+}
 
 #[wasm_bindgen]
 #[repr(u8)]
@@ -21,11 +25,13 @@ pub enum Axis {
 }
 
 #[wasm_bindgen]
+#[derive(Debug)]
 pub struct GameBoard {
     size: usize,
     cells: Vec<u8>,
     rng: rngs::ThreadRng,
     game_over: bool,
+    merge_prediction: HashMap<Direction, Vec<u8>>
 }
 
 #[wasm_bindgen]
@@ -36,13 +42,15 @@ impl GameBoard {
         let size: usize = s;
         let cells: Vec<u8> = vec![0; size * size];
         let rng: rngs::ThreadRng = thread_rng();
-        let game_over: bool = false;
+        let _game_over: bool = false;
+        let merge_prediction: HashMap<Direction, Vec<u8>> = HashMap::new();
 
         GameBoard {
             size,
             cells,
             rng,
-            game_over,
+            _game_over,
+            merge_prediction,
         }
     }
 
@@ -51,17 +59,30 @@ impl GameBoard {
         self.cells.as_ptr()
     }
 
-    #[wasm_bindgen(method, getter)]
+    #[wasm_bindgen(method, getter, js_name=isGameWin)]
     pub fn is_game_win(&self) -> bool {
         self.cells.contains(&11)
     }
     
-    #[wasm_bindgen(method, getter)]
+    #[wasm_bindgen(method, getter, js_name=isGameOver)]
     pub fn is_game_over(&self) -> bool {
         self.game_over
     }
 
-    fn predict_merge(&self) -> HashMap<Direction, Vec<u8>> {
+    pub fn generate(&mut self) {
+        let empty_idx: usize = self.rng.gen_range(0..self.empty_cells().len());
+        let empty_vec: Vec<usize> = self.empty_cells().into_iter().collect();
+        let idx = empty_vec[empty_idx];
+        self.cells[idx] = if self.rng.gen_range(0..64) == 0 { 2 } else { 1 };
+        
+        if self.empty_cells().len() == self.cells.len() - 1 {
+            self.generate();
+        }
+
+        self.predict_merge();
+    }
+
+    fn predict_merge(&mut self) {
         let mut lines_axis: HashMap<Axis, Vec<Vec<u8>>> = HashMap::new();
 
         for axis in vec![Axis::Vertical, Axis::Horizontal] {
@@ -74,7 +95,21 @@ impl GameBoard {
             merge_prediction.insert(dir, self.lines_to_vec(&self.merge(lines_axis.get(&GameBoard::dir_to_axis(dir)).unwrap(), dir), dir));
         }
 
-        merge_prediction
+        self.merge_prediction = merge_prediction;
+    }
+
+    #[wasm_bindgen(js_name=moveCells)]
+    pub fn move_cells(&mut self, dir: Direction) {
+        if self.game_over { return }
+
+        let next: Vec<u8> = self.merge_prediction.get(&dir).unwrap().to_vec();
+        
+        if self.cells != next {
+            self.cells = next;
+            self.generate();
+        }
+
+        self.check_if_game_over();
     }
 
     fn empty_cells(&self) -> BTreeSet<usize> {
@@ -88,24 +123,11 @@ impl GameBoard {
             })
             .collect::<BTreeSet<usize>>()
     }
-
-    pub fn move_cells(&mut self, dir: Direction) {
-        if self.game_over { return }
-        let merge_prediction: HashMap<Direction, Vec<u8>> = self.predict_merge();
-
-        let next: Vec<u8> = merge_prediction.get(&dir).unwrap().to_vec();
-
-        if self.check_if_game_over(merge_prediction.values().collect()) { return }
-
-        if self.cells != next {
-            self.cells = next;
-            self.generate();
-        }
-    }
     
-    fn check_if_game_over(&mut self, merge: Vec<&Vec<u8>>) -> bool {
+    fn check_if_game_over(&mut self) -> bool {
+        let merge: Vec<&Vec<u8>> = self.merge_prediction.values().collect();
         let game_over = false;
-        for i in (0..merge[0].len()) {
+        for i in 0..merge[0].len() {
             if merge[0][i] != merge[1][i] ||
                 merge[0][i] != merge[2][i] ||
                 merge[0][i] != merge[3][i] {
@@ -116,16 +138,6 @@ impl GameBoard {
         true
     }
 
-    pub fn generate(&mut self) {
-        let empty_idx: usize = self.rng.gen_range(0..self.empty_cells().len());
-        let empty_vec: Vec<usize> = self.empty_cells().into_iter().collect();
-        let idx = empty_vec[empty_idx];
-        self.cells[idx] = if self.rng.gen_range(0..64) == 0 { 2 } else { 1 };
-        
-        if self.empty_cells().len() == self.cells.len() - 1 {
-            self.generate();
-        }
-    }
     
     fn lines_to_vec(&self, lines: &Vec<Vec<u8>>, dir: Direction) -> Vec<u8> {
         let mut next: Vec<u8> = vec![0; self.size * self.size];
