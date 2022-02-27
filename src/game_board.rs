@@ -42,14 +42,14 @@ impl GameBoard {
         let size: usize = s;
         let cells: Vec<u8> = vec![0; size * size];
         let rng: rngs::ThreadRng = thread_rng();
-        let _game_over: bool = false;
+        let game_over: bool = false;
         let merge_prediction: HashMap<Direction, Vec<u8>> = HashMap::new();
 
         GameBoard {
             size,
             cells,
             rng,
-            _game_over,
+            game_over,
             merge_prediction,
         }
     }
