@@ -59,12 +59,12 @@ impl GameBoard {
         self.cells.as_ptr()
     }
 
-    #[wasm_bindgen(method, getter, js_name=isGameWin)]
+    #[wasm_bindgen(method, getter)]
     pub fn is_game_win(&self) -> bool {
         self.cells.contains(&11)
     }
     
-    #[wasm_bindgen(method, getter, js_name=isGameOver)]
+    #[wasm_bindgen(method, getter)]
     pub fn is_game_over(&self) -> bool {
         self.game_over
     }
@@ -82,6 +82,19 @@ impl GameBoard {
         self.predict_merge();
     }
 
+    pub fn move_cells(&mut self, dir: Direction) {
+        if self.game_over { return }
+
+        let next: Vec<u8> = self.merge_prediction.get(&dir).unwrap().to_vec();
+        
+        if self.cells != next {
+            self.cells = next;
+            self.generate();
+        }
+
+        self.check_if_game_over();
+    }
+
     fn predict_merge(&mut self) {
         let mut lines_axis: HashMap<Axis, Vec<Vec<u8>>> = HashMap::new();
 
@@ -96,20 +109,6 @@ impl GameBoard {
         }
 
         self.merge_prediction = merge_prediction;
-    }
-
-    #[wasm_bindgen(js_name=moveCells)]
-    pub fn move_cells(&mut self, dir: Direction) {
-        if self.game_over { return }
-
-        let next: Vec<u8> = self.merge_prediction.get(&dir).unwrap().to_vec();
-        
-        if self.cells != next {
-            self.cells = next;
-            self.generate();
-        }
-
-        self.check_if_game_over();
     }
 
     fn empty_cells(&self) -> BTreeSet<usize> {
