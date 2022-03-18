@@ -51,7 +51,7 @@ const move = (key) => {
     if (key.code.startsWith('Arrow')) key.preventDefault();
     let dir = movementKeys.filter(e => e.keys.includes(key.code)).map(e => e.dir);
     if (dir.length == 0) return
-    gameBoard.move_cells(dir[0]);
+    gameBoard.move_cells(dir[0], true);
     window.requestAnimationFrame(render);
     if (!isGameWin && gameBoard.is_game_win) window.requestAnimationFrame(gameWin);
     if (gameBoard.is_game_over) window.requestAnimationFrame(gameOver);
