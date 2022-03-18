@@ -18,6 +18,15 @@ pub enum Direction {
     Right,
 }
 
+impl Direction {
+    fn to_axis(&self) -> Axis {
+        match self {
+            Direction::Up   | Direction::Down  => Axis::Vertical,
+            Direction::Left | Direction::Right => Axis::Horizontal,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Axis {
     Vertical,
@@ -75,40 +84,51 @@ impl GameBoard {
         let idx = empty_vec[empty_idx];
         self.cells[idx] = if self.rng.gen_range(0..64) == 0 { 2 } else { 1 };
         
-        if self.empty_cells().len() == self.cells.len() - 1 {
+        if self.empty_cells().len() == self.cells.len() - 1 && self.size > 1 {
             self.generate();
         }
-
+        
         self.predict_merge();
+        self.check_if_game_over();
     }
-
-    pub fn move_cells(&mut self, dir: Direction) {
+    
+    pub fn move_cells(&mut self, dir: Direction, gen: bool) {
         if self.game_over { return }
-
+        
         let next: Vec<u8> = self.merge_prediction.get(&dir).unwrap().to_vec();
         
         if self.cells != next {
             self.cells = next;
-            self.generate();
+            if gen {
+                self.generate();
+            }
         }
+        
+    }
 
+}
+
+impl GameBoard {
+    pub fn size(&self) -> usize {
+        self.size
+    }
+
+    pub fn vec_cells(&self) -> Vec<u8> {
+        self.cells.clone()
+    }
+
+    pub fn set_cells(&mut self, cells: &Vec<u8>) {
+        self.cells = cells.to_vec();
+        self.predict_merge();
         self.check_if_game_over();
     }
 
-    fn predict_merge(&mut self) {
-        let mut lines_axis: HashMap<Axis, Vec<Vec<u8>>> = HashMap::new();
+    pub fn merge_prediction(&self) -> &HashMap<Direction, Vec<u8>> {
+        &self.merge_prediction
+    }
 
-        for axis in vec![Axis::Vertical, Axis::Horizontal] {
-            lines_axis.insert(axis, self.lines(axis));
-        }
-
-        let mut merge_prediction: HashMap<Direction, Vec<u8>> = HashMap::new();
-
-        for dir in vec![Direction::Up, Direction::Down, Direction::Left, Direction::Right] {
-            merge_prediction.insert(dir, self.lines_to_vec(&self.merge(lines_axis.get(&GameBoard::dir_to_axis(dir)).unwrap(), dir), dir));
-        }
-
-        self.merge_prediction = merge_prediction;
+    pub fn empty_cells_qty(&self) -> usize {
+        self.empty_cells().len()
     }
 
     fn empty_cells(&self) -> BTreeSet<usize> {
@@ -123,20 +143,43 @@ impl GameBoard {
             .collect::<BTreeSet<usize>>()
     }
     
-    fn check_if_game_over(&mut self) -> bool {
+    fn predict_merge(&mut self) {
+        let mut lines_axis: HashMap<Axis, Vec<Vec<u8>>> = HashMap::new();
+    
+        for axis in vec![Axis::Vertical, Axis::Horizontal] {
+            lines_axis.insert(axis, self.lines(axis));
+        }
+    
+        let mut merge_prediction: HashMap<Direction, Vec<u8>> = HashMap::new();
+    
+        for dir in vec![Direction::Up, Direction::Down, Direction::Left, Direction::Right] {
+            merge_prediction.insert(
+                dir,
+                self.lines_to_vec(
+                    &self.merge(
+                        lines_axis.get(&dir.to_axis()).unwrap(),
+                        dir
+                    ),
+                    dir
+                )
+            );
+        }
+    
+        self.merge_prediction = merge_prediction;
+    }
+    
+    fn check_if_game_over(&mut self) {
         let merge: Vec<&Vec<u8>> = self.merge_prediction.values().collect();
-        let game_over = false;
         for i in 0..merge[0].len() {
             if merge[0][i] != merge[1][i] ||
                 merge[0][i] != merge[2][i] ||
                 merge[0][i] != merge[3][i] {
-                    return false;     
+                    return;
             }
         }
         self.game_over = true;
-        true
     }
-
+    
     
     fn lines_to_vec(&self, lines: &Vec<Vec<u8>>, dir: Direction) -> Vec<u8> {
         let mut next: Vec<u8> = vec![0; self.size * self.size];
@@ -172,7 +215,7 @@ impl GameBoard {
         let mut merge: Vec<Vec<u8>> = vec![vec![]; self.size];
         
         let is_dir_rev: bool = GameBoard::is_dir_rev(dir);
-
+    
         lines.into_iter()
             .enumerate()
             .for_each(|(i, l)| {
@@ -182,7 +225,7 @@ impl GameBoard {
                 };
                 let mut line = line_vec.into_iter().peekable();
                 let mut line_merge = Vec::new();
-
+    
                 while let Some(cell) = line.next() {
                     if Some(&cell) == line.peek() {
                         line_merge.push(*cell + 1);
@@ -191,7 +234,7 @@ impl GameBoard {
                         line_merge.push(*cell);
                     }
                 }
-
+    
                 merge[i] = match is_dir_rev {
                     true    => line_merge.into_iter().rev().collect(),
                     false   => line_merge,
@@ -200,21 +243,14 @@ impl GameBoard {
         );
         merge
     }
-
-    fn dir_to_axis(dir: Direction) -> Axis {
-        match dir {
-            Direction::Up   | Direction::Down   => Axis::Vertical,
-            Direction::Left | Direction::Right  => Axis::Horizontal,
-        }
-    }
-
+    
     fn is_dir_rev(dir: Direction) -> bool {
         match dir {
             Direction::Up   | Direction::Left    => false,
             Direction::Down | Direction::Right   => true,
         }
     }
-
+    
     fn lines(&self, axis: Axis) -> Vec<Vec<u8>> {
         let mut lines: Vec<Vec<u8>> = vec![vec![]; self.size];
         
@@ -232,4 +268,5 @@ impl GameBoard {
         
         lines
     }
+    
 }
